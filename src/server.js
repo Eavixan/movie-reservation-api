@@ -1,5 +1,6 @@
 const express = require("express");
 const dotenv = require("dotenv");
+const prisma = require("./config/prisma");
 
 dotenv.config();
 
@@ -13,6 +14,22 @@ app.get("/", (req, res) => {
     success: true,
     message: "Movie Reservation API is running",
   });
+});
+
+app.get("/api/health/database", async (req, res) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+
+    res.status(200).json({
+      success: true,
+      message: "Database connection is working",
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Database connection failed",
+    });
+  }
 });
 
 app.listen(PORT, () => {
