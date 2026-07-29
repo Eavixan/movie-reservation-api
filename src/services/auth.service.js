@@ -1,5 +1,6 @@
 const bcrypt = require("bcryptjs");
 const prisma = require("../config/prisma");
+const jwt = require("jsonwebtoken");
 
 const signupUser = async ({ name, email, password }) => {
   const existingUser = await prisma.user.findUnique({
@@ -39,5 +40,48 @@ const signupUser = async ({ name, email, password }) => {
     throw error;
   }
 };
+const loginUser = async ({ email, password }) => {
+  const user = await prisma.user.findUnique({
+    where: { email },
+  });
 
-module.exports = { signupUser };
+  if (!user) {
+    const error = new Error("Invalid email or password");
+    error.statusCode = 401;
+    throw error;
+  }
+
+  const passwordMatches = await bcrypt.compare(
+    password,
+    user.passwordHash
+  );
+
+  if (!passwordMatches) {
+    const error = new Error("Invalid email or password");
+    error.statusCode = 401;
+    throw error;
+  }
+
+  const token = jwt.sign(
+    {
+      sub: user.id,
+      role: user.role,
+    },
+    process.env.JWT_SECRET,
+    {
+      expiresIn: process.env.JWT_EXPIRES_IN || "7d",
+    }
+  );
+
+  return {
+    token,
+    user: {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+    },
+  };
+};
+
+module.exports = { signupUser, loginUser };

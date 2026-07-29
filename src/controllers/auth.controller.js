@@ -1,5 +1,18 @@
-const { signupSchema } = require("../validators/auth.validator");
-const { signupUser } = require("../services/auth.service");
+const {
+  signupSchema,
+  loginSchema,
+} = require("../validators/auth.validator");
+
+const {
+  signupUser,
+  loginUser,
+} = require("../services/auth.service");
+
+const formatValidationErrors = (issues) =>
+  issues.map((issue) => ({
+    field: issue.path.join("."),
+    message: issue.message,
+  }));
 
 const signup = async (req, res) => {
   const validation = signupSchema.safeParse(req.body);
@@ -8,10 +21,7 @@ const signup = async (req, res) => {
     return res.status(400).json({
       success: false,
       message: "Validation failed",
-      errors: validation.error.issues.map((issue) => ({
-        field: issue.path.join("."),
-        message: issue.message,
-      })),
+      errors: formatValidationErrors(validation.error.issues),
     });
   }
 
@@ -21,10 +31,12 @@ const signup = async (req, res) => {
     return res.status(201).json({
       success: true,
       message: "User registered successfully",
-      data: { user },
+      data: {
+        user,
+      },
     });
   } catch (error) {
-    console.error(error);
+    console.error("Signup error:", error);
 
     return res.status(error.statusCode || 500).json({
       success: false,
@@ -35,4 +47,38 @@ const signup = async (req, res) => {
   }
 };
 
-module.exports = { signup };
+const login = async (req, res) => {
+  const validation = loginSchema.safeParse(req.body);
+
+  if (!validation.success) {
+    return res.status(400).json({
+      success: false,
+      message: "Validation failed",
+      errors: formatValidationErrors(validation.error.issues),
+    });
+  }
+
+  try {
+    const result = await loginUser(validation.data);
+
+    return res.status(200).json({
+      success: true,
+      message: "Login successful",
+      data: result,
+    });
+  } catch (error) {
+    console.error("Login error:", error);
+
+    return res.status(error.statusCode || 500).json({
+      success: false,
+      message: error.statusCode
+        ? error.message
+        : "Internal server error",
+    });
+  }
+};
+
+module.exports = {
+  signup,
+  login,
+};

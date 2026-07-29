@@ -13,4 +13,13 @@ const signupSchema = z.object({
     .max(72, "Password must not exceed 72 characters"),
 });
 
-module.exports = { signupSchema };
+const loginSchema = z.object({
+  email: z
+    .string()
+    .trim()
+    .email("Enter a valid email")
+    .transform((email) => email.toLowerCase()),
+  password: z.string().min(1, "Password is required"),
+});
+
+module.exports = { signupSchema, loginSchema };
