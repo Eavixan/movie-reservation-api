@@ -1,5 +1,10 @@
 const express = require("express");
-const { adminTest } = require("../controllers/admin.controller");
+
+const {
+  adminTest,
+  promoteUser,
+} = require("../controllers/admin.controller");
+
 const {
   authenticate,
   authorizeRoles,
@@ -7,11 +12,10 @@ const {
 
 const router = express.Router();
 
-router.get(
-  "/test",
-  authenticate,
-  authorizeRoles("ADMIN"),
-  adminTest
-);
+router.use(authenticate);
+router.use(authorizeRoles("ADMIN"));
+
+router.get("/test", adminTest);
+router.patch("/users/:userId/promote", promoteUser);
 
 module.exports = router;
